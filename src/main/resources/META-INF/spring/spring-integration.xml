@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:int="http://www.springframework.org/schema/integration"
+       xmlns:int-http="http://www.springframework.org/schema/integration/http"
+       xsi:schemaLocation="http://www.springframework.org/schema/integration
+	http://www.springframework.org/schema/integration/spring-integration.xsd
+		http://www.springframework.org/schema/integration/http
+		http://www.springframework.org/schema/integration/http/spring-integration-http.xsd
+		http://www.springframework.org/schema/beans
+		http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+
+    <int:gateway id="positionGateway"
+                 service-interface="com.ua.sample.integration.PositionGateway"
+                 default-request-channel="getPositionsRequestChannel"
+                 default-reply-channel="getPositionsResponseChannel">
+        <int:method name="getPositionsByCityName"/>
+    </int:gateway>
+
+    <int:channel id="getPositionsRequestChannel" />
+    <int:channel id="getPositionsResponseChannel" />
+
+
+
+    <int:chain id="positionGatewayChain" input-channel="getPositionsRequestChannel" output-channel="getPositionsResponseChannel">
+        <int-http:outbound-gateway
+                url="http://api.goeuro.com/api/v2/position/suggest/en/{cityName}"
+                http-method="GET"
+                expected-response-type="java.lang.String">
+            <int-http:uri-variable name="cityName" expression="payload"/>
+        </int-http:outbound-gateway>
+        <int:service-activator ref="positionTransformer" method="transform"/>
+    </int:chain>
+
+    <bean id="positionTransformer" class="com.ua.sample.integration.PositionTransformer"/>
+
+</beans>
