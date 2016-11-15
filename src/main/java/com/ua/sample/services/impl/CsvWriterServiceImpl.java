@@ -1,12 +1,14 @@
-package com.ua.sample.services;
+package com.ua.sample.services.impl;
 
 import com.google.common.collect.Lists;
+import com.ua.sample.services.CsvWriterService;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Validate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 import org.springframework.util.ClassUtils;
 
 import java.io.FileWriter;
@@ -22,10 +24,10 @@ import java.util.Map;
 /**
  * Created by Kyrylo_Kovalchuk on 11/15/2016.
  */
-@Component
-public class CsvWriter {
+@Service
+public class CsvWriterServiceImpl implements CsvWriterService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CsvWriter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CsvWriterServiceImpl.class);
 
     private static final String NEW_LINE_SEPARATOR = "\n";
     private static final String NESTED_OBJECT_HEADER_DELIMITER = ".";
@@ -35,6 +37,7 @@ public class CsvWriter {
 
     private static final int ALLOWED_FIELD_DEPTH = 3;
 
+    @Override
     public <T> void writeCsv(List<T> toSerialize, String fileName, Class<T> classToSerialize) {
         Validate.notEmpty(toSerialize);
         Path filePath = createFilePath(fileName);
@@ -58,6 +61,10 @@ public class CsvWriter {
 
     private boolean isFilePathValid(Path filePath) {
         try {
+            if (!Files.exists(filePath)) {
+                LOG.info("File {} do not exist, will be created", filePath.toAbsolutePath());
+                return true;
+            }
             return Files.isRegularFile(filePath) & Files.isWritable(filePath) & Files.isExecutable(filePath);
         } catch (SecurityException exception) {
             LOG.error("Can not write file{} due to security restrictions", filePath.toAbsolutePath());
@@ -78,7 +85,6 @@ public class CsvWriter {
         return collectHeadersForClass(classToSerialize, null, 0);
     }
 
-    //todo add support to inherited fields
     private String collectHeadersForClass(Class<?> classToSerialize, Field parentField, int fieldsDepth) {
         if (fieldsDepth > ALLOWED_FIELD_DEPTH) {
             throw new IllegalArgumentException(String.format("Can not serialize %d depth fields", ALLOWED_FIELD_DEPTH));
@@ -107,24 +113,25 @@ public class CsvWriter {
         return !ClassUtils.isPrimitiveOrWrapper(fieldType) && !fieldType.equals(String.class);
     }
 
-    private List<String> collectRow(final Object serializedToCsvObject, final Class<?> classToSerialize) throws IllegalAccessException {
-        List<Field> fields = Arrays.asList(classToSerialize.getDeclaredFields());
-        List<String> rows = Lists.newArrayList();
+    private List<String> collectRow(final Object objectToWrite, final Class<?> classToWrite) throws IllegalAccessException {
+        List<Field> fields = Arrays.asList(classToWrite.getDeclaredFields());
+        List<String> rowEntries = Lists.newArrayList();
         for (Field field : fields) {
             field.setAccessible(true);
             if (isFieldNestedObject(field)) {
-                rows.addAll(collectRow(field.get(serializedToCsvObject), field.getType()));
+                rowEntries.addAll(collectRow(field.get(objectToWrite), field.getType()));
+            } else {
+                rowEntries.add(extractFieldValue(field.get(objectToWrite), field.getType()));
             }
-            rows.add(extractFieldValue(field.get(serializedToCsvObject), field.getType()));
         }
-        return rows;
+        return rowEntries;
     }
 
     private String extractFieldValue(Object value, final Class<?> classToSerialize) {
         if (classToSerialize.equals(String.class)) {
             return (String) value;
         } else if (ClassUtils.isPrimitiveOrWrapper(classToSerialize)) {
-            return String.valueOf(value);
+            return value != null ? String.valueOf(value) : StringUtils.EMPTY;
         } else {
             return value.toString();
         }

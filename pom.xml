@@ -13,27 +13,14 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maveb.compiler.source>1.8</maveb.compiler.source>
         <maveb.compiler.target>1.8</maveb.compiler.target>
-        <!-- Spring version-->
         <spring.framework.version>4.3.3.RELEASE</spring.framework.version>
-        <!-- Spring Security version -->
-        <org.springsecurityframework.version>4.0.2.RELEASE</org.springsecurityframework.version>
-        <!-- Hibernate version -->
-        <hibernate.framework.version>4.3.10.Final</hibernate.framework.version>
-        <!-- Mockito version -->
+        <spring.integration.version>4.3.4.RELEASE</spring.integration.version>
         <mockito.framework.version>1.10.19</mockito.framework.version>
-        <!-- JUnit version -->
         <junit.framework.version>4.12</junit.framework.version>
-        <!-- Jackson version -->
-        <jackson.version>1.9.10</jackson.version>
+        <jackson.version>2.6.0</jackson.version>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20090211</version>
-        </dependency>
-
         <!-- Spring -->
         <dependency>
             <groupId>org.springframework</groupId>
@@ -41,30 +28,14 @@
             <version>${spring.framework.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context-support</artifactId>
-            <version>${spring.framework.version}</version>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-http</artifactId>
+            <version>${spring.integration.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-orm</artifactId>
-            <version>${spring.framework.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-test</artifactId>
-            <version>${spring.framework.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-web</artifactId>
-            <version>${spring.framework.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-            <version>${spring.framework.version}</version>
+            <groupId>org.springframework.integration</groupId>
+            <artifactId>spring-integration-core</artifactId>
+            <version>${spring.integration.version}</version>
         </dependency>
         <!--END of Spring -->
 
@@ -79,17 +50,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
             <version>${mockito.framework.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.integration</groupId>
-            <artifactId>spring-integration-http</artifactId>
-            <version>4.3.4.RELEASE</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.integration</groupId>
-            <artifactId>spring-integration-core</artifactId>
-            <version>4.3.4.RELEASE</version>
         </dependency>
 
         <!-- Logging -->
@@ -109,7 +69,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.6.0</version>
+            <version>${jackson.version}</version>
         </dependency>
 
         <!-- CSV reader -->
@@ -134,7 +94,6 @@
     <build>
         <finalName>CSVWriterApp</finalName>
         <plugins>
-            <!-- Set compile jdk version -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -142,6 +101,35 @@
                     <source>${maveb.compiler.source}</source>
                     <target>${maveb.compiler.target}</target>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>2.3</version>
+                <executions>
+                    <!-- Run shade goal on package phase -->
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <transformers>
+                                <!-- add Main-Class to manifest file -->
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.ua.sample.Main</mainClass>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.handlers</resource>
+                                </transformer>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                                    <resource>META-INF/spring.schemas</resource>
+                                </transformer>
+                            </transformers>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

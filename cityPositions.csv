@@ -1,0 +1,9 @@
+"_id, key, name, fullName, iata_airport_code, type, country, geo_position.latitude, geo_position.longitude, location_id, inEurope, countryCode, coreCountry, distance"
+376217,,Berlin,"Berlin, Germany",,location,Germany,52.52437,13.41053,,true,DE,true,
+448103,,Berlingo,"Berlingo, Italy",,location,Italy,45.50298,10.04366,,true,IT,true,
+425332,,Berlingerode,"Berlingerode, Germany",,location,Germany,51.45775,10.2384,,true,DE,true,
+425326,,Bernau bei Berlin,"Bernau bei Berlin, Germany",,location,Germany,52.67982,13.58708,,true,DE,true,
+314826,,Berlin Tegel,"Berlin Tegel (TXL), Germany",TXL,airport,Germany,52.5548,13.28903,,true,DE,true,
+314827,,Berlin Schönefeld,"Berlin Schönefeld (SXF), Germany",SXF,airport,Germany,52.3887261,13.5180874,,true,DE,true,
+334196,,Berlin Hbf,"Berlin Hbf, Germany",,station,Germany,52.525589,13.369548,,true,DE,true,
+333977,,Berlin Ostbahnhof,"Berlin Ostbahnhof, Germany",,station,Germany,52.510972,13.434567,,true,DE,true,

@@ -1,8 +1,8 @@
 package com.ua.sample;
 
 import com.ua.sample.domain.Position;
-import com.ua.sample.integration.PositionGateway;
-import com.ua.sample.services.CsvWriter;
+import com.ua.sample.services.CityPositionsService;
+import com.ua.sample.services.impl.CsvWriterServiceImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,14 +19,16 @@ public class ApplicationRunner {
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationRunner.class);
 
     @Autowired
-    private PositionGateway positionGateway;
+    private CityPositionsService cityPositionsService;
     @Autowired
-    private CsvWriter csvWriter;
+    private CsvWriterServiceImpl csvWriter;
 
+    //todo move url to properties
     public void main(String... args) {
-        final List<Position> cityPositions = positionGateway.getPositionsByCityName("Berlin");
-        LOG.info("Result from endpoint:" + cityPositions);
-      //  String fileName = "newfile.csv";
+        final List<Position> cityPositions = cityPositionsService.sendGetPositionsRequest("Berlin");
+        if (cityPositions == null) {
+            return;
+        }
         csvWriter.writeCsv(cityPositions, null, Position.class);
     }
 }
