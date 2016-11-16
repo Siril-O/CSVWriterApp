@@ -1,14 +1,16 @@
 package com.ua.sample.services.impl;
 
+import java.util.List;
+
 import com.ua.sample.domain.Position;
+import com.ua.sample.exceptions.GetPositionsException;
 import com.ua.sample.integration.PositionGateway;
 import com.ua.sample.services.CityPositionsService;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 /**
  * Created by KIRIL on 15.11.2016.
@@ -22,15 +24,16 @@ public class CityPositionsServiceImpl implements CityPositionsService {
     private PositionGateway positionGateway;
 
     @Override
-    public List<Position> sendGetPositionsRequest(String cityName) {
+    public List<Position> sendGetPositionsRequest(String cityName) throws GetPositionsException {
         List<Position> positions = null;
         try {
             positions = positionGateway.getPositionsByCityName(cityName);
             if (positions.isEmpty()) {
-                LOG.error("No positions found for cityName{}", cityName);
+                LOG.warn("No positions found for cityName:{}", cityName);
             }
         } catch (Exception exception) {
-            LOG.error("Error happened when quering API. Reason {}", exception.getMessage());
+            LOG.error("Error happened when querying API", exception);
+            throw new GetPositionsException(exception);
         }
         return positions;
     }

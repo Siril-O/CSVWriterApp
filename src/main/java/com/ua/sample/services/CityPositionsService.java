@@ -1,6 +1,7 @@
 package com.ua.sample.services;
 
 import com.ua.sample.domain.Position;
+import com.ua.sample.exceptions.GetPositionsException;
 
 import java.util.List;
 
@@ -9,5 +10,5 @@ import java.util.List;
  */
 public interface CityPositionsService {
 
-    List<Position>  sendGetPositionsRequest(String cityName);
+    List<Position>  sendGetPositionsRequest(String cityName) throws GetPositionsException;
 }

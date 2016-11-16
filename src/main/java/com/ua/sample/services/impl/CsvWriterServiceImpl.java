@@ -1,17 +1,7 @@
 package com.ua.sample.services.impl;
 
-import com.google.common.collect.Lists;
-import com.ua.sample.services.CsvWriterService;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Validate;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
-import org.springframework.util.ClassUtils;
-
 import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.file.FileSystems;
@@ -20,6 +10,19 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import com.google.common.collect.Lists;
+import com.ua.sample.exceptions.CsvWriteException;
+import com.ua.sample.services.CsvWriterService;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Validate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.util.ClassUtils;
 
 /**
  * Created by Kyrylo_Kovalchuk on 11/15/2016.
@@ -33,18 +36,17 @@ public class CsvWriterServiceImpl implements CsvWriterService {
     private static final String NESTED_OBJECT_HEADER_DELIMITER = ".";
     private static final String HEADER_DELIMITER = ",";
     private static final String DEFAULT_FILE_NAME = "cityPositions.csv";
+    private static final String SPACE_DELIMITER = " ";
+
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.withRecordSeparator(NEW_LINE_SEPARATOR);
 
     private static final int ALLOWED_FIELD_DEPTH = 3;
 
     @Override
-    public <T> void writeCsv(List<T> toSerialize, String fileName, Class<T> classToSerialize) {
+    public <T> void writeCsv(List<T> toSerialize, String fileName, Class<T> classToSerialize) throws CsvWriteException {
         Validate.notEmpty(toSerialize);
         Path filePath = createFilePath(fileName);
-        if (!isFilePathValid(filePath)) {
-            LOG.error("File {} is not accessible", filePath.toAbsolutePath());
-            return;
-        }
+        validateFilePath(filePath);
         try (FileWriter fileWriter = new FileWriter(filePath.toFile());
              CSVPrinter csvFilePrinter = new CSVPrinter(fileWriter, CSV_FORMAT)) {
 
@@ -54,12 +56,13 @@ public class CsvWriterServiceImpl implements CsvWriterService {
                 csvFilePrinter.printRecord(collectRow(value, classToSerialize));
             }
             LOG.info("File {} was filled with data successfully.", filePath);
-        } catch (Exception e) {
-            LOG.error("Error writing to file:{}. Reason: {}", filePath.toAbsolutePath(), e.getMessage());
+        } catch (Exception exception) {
+            LOG.error("Error writing to file:{}. Reason: {}", filePath.toAbsolutePath(), exception);
+            throw new CsvWriteException(exception);
         }
     }
 
-    private boolean isFilePathValid(Path filePath) {
+    private boolean validateFilePath(Path filePath) throws CsvWriteException {
         try {
             if (!Files.exists(filePath)) {
                 LOG.info("File {} do not exist, will be created", filePath.toAbsolutePath());
@@ -68,7 +71,7 @@ public class CsvWriterServiceImpl implements CsvWriterService {
             return Files.isRegularFile(filePath) & Files.isWritable(filePath) & Files.isExecutable(filePath);
         } catch (SecurityException exception) {
             LOG.error("Can not write file{} due to security restrictions", filePath.toAbsolutePath());
-            return false;
+            throw new CsvWriteException(exception);
         }
     }
 
@@ -92,7 +95,7 @@ public class CsvWriterServiceImpl implements CsvWriterService {
         List<Field> fields = Arrays.asList(classToSerialize.getDeclaredFields());
         List<String> headers = Lists.newArrayList();
         for (Field field : fields) {
-            final String header;
+            String header;
             if (isFieldNestedObject(field)) {
                 header = collectHeadersForClass(field.getType(), field, ++fieldsDepth);
             } else {
@@ -101,7 +104,7 @@ public class CsvWriterServiceImpl implements CsvWriterService {
             }
             headers.add(header);
         }
-        return String.join(HEADER_DELIMITER + " ", headers);
+        return String.join(HEADER_DELIMITER + SPACE_DELIMITER, headers);
     }
 
     private boolean isFieldNestedObject(Field field) {
@@ -113,7 +116,7 @@ public class CsvWriterServiceImpl implements CsvWriterService {
         return !ClassUtils.isPrimitiveOrWrapper(fieldType) && !fieldType.equals(String.class);
     }
 
-    private List<String> collectRow(final Object objectToWrite, final Class<?> classToWrite) throws IllegalAccessException {
+    private List<String> collectRow(Object objectToWrite, Class<?> classToWrite) throws IllegalAccessException {
         List<Field> fields = Arrays.asList(classToWrite.getDeclaredFields());
         List<String> rowEntries = Lists.newArrayList();
         for (Field field : fields) {
@@ -127,7 +130,7 @@ public class CsvWriterServiceImpl implements CsvWriterService {
         return rowEntries;
     }
 
-    private String extractFieldValue(Object value, final Class<?> classToSerialize) {
+    private String extractFieldValue(Object value, Class<?> classToSerialize) {
         if (classToSerialize.equals(String.class)) {
             return (String) value;
         } else if (ClassUtils.isPrimitiveOrWrapper(classToSerialize)) {

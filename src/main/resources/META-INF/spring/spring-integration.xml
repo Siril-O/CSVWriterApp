@@ -11,7 +11,6 @@
 		    http://www.springframework.org/schema/beans
 		    http://www.springframework.org/schema/beans/spring-beans-4.3.xsd">
 
-
     <int:gateway id="positionGateway"
                  service-interface="com.ua.sample.integration.PositionGateway"
                  default-request-channel="getPositionsRequestChannel"
@@ -22,18 +21,14 @@
     <int:channel id="getPositionsRequestChannel" />
     <int:channel id="getPositionsResponseChannel" />
 
-
-
     <int:chain id="positionGatewayChain" input-channel="getPositionsRequestChannel" output-channel="getPositionsResponseChannel">
         <int-http:outbound-gateway
-                url="http://api.goeuro.com/api/v2/position/suggest/en/{cityName}"
+                url="${positions_url}/{cityName}"
                 http-method="GET"
                 expected-response-type="java.lang.String">
             <int-http:uri-variable name="cityName" expression="payload"/>
         </int-http:outbound-gateway>
         <int:service-activator ref="positionTransformer" method="transform"/>
     </int:chain>
-
-    <bean id="positionTransformer" class="com.ua.sample.integration.PositionTransformer"/>
 
 </beans>
