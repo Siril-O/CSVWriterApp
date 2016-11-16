@@ -1,20 +1,8 @@
 package com.ua.sample.services.impl;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.Lists;
 import com.ua.sample.exceptions.CsvWriteException;
 import com.ua.sample.services.CsvWriterService;
-
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +11,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.util.ClassUtils;
+
+import java.io.FileWriter;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Created by Kyrylo_Kovalchuk on 11/15/2016.
@@ -33,9 +30,7 @@ public class CsvWriterServiceImpl implements CsvWriterService {
     private static final Logger LOG = LoggerFactory.getLogger(CsvWriterServiceImpl.class);
 
     private static final String NEW_LINE_SEPARATOR = "\n";
-    private static final String NESTED_OBJECT_HEADER_DELIMITER = ".";
     private static final String HEADER_DELIMITER = ",";
-    private static final String DEFAULT_FILE_NAME = "cityPositions.csv";
     private static final String SPACE_DELIMITER = " ";
 
     private static final CSVFormat CSV_FORMAT = CSVFormat.DEFAULT.withRecordSeparator(NEW_LINE_SEPARATOR);
@@ -43,9 +38,8 @@ public class CsvWriterServiceImpl implements CsvWriterService {
     private static final int ALLOWED_FIELD_DEPTH = 3;
 
     @Override
-    public <T> void writeCsv(List<T> toSerialize, String fileName, Class<T> classToSerialize) throws CsvWriteException {
+    public <T> void writeCsv(List<T> toSerialize, Class<T> classToSerialize, Path filePath) throws CsvWriteException {
         Validate.notEmpty(toSerialize);
-        Path filePath = createFilePath(fileName);
         validateFilePath(filePath);
         try (FileWriter fileWriter = new FileWriter(filePath.toFile());
              CSVPrinter csvFilePrinter = new CSVPrinter(fileWriter, CSV_FORMAT)) {
@@ -75,20 +69,12 @@ public class CsvWriterServiceImpl implements CsvWriterService {
         }
     }
 
-    private Path createFilePath(String fileName) {
-        if (fileName == null) {
-            fileName = DEFAULT_FILE_NAME;
-            LOG.info("Using default file path");
-        }
-        return FileSystems.getDefault().getPath(fileName);
-    }
-
     // Can not handle cyclic dependencies, collections, map, arrays, and inherited POJO fields, static fields
     private String collectHeader(Class<?> classToSerialize) {
-        return collectHeadersForClass(classToSerialize, null, 0);
+        return collectHeadersForClass(classToSerialize, 0);
     }
 
-    private String collectHeadersForClass(Class<?> classToSerialize, Field parentField, int fieldsDepth) {
+    private String collectHeadersForClass(Class<?> classToSerialize, int fieldsDepth) {
         if (fieldsDepth > ALLOWED_FIELD_DEPTH) {
             throw new IllegalArgumentException(String.format("Can not serialize %d depth fields", ALLOWED_FIELD_DEPTH));
         }
@@ -97,10 +83,9 @@ public class CsvWriterServiceImpl implements CsvWriterService {
         for (Field field : fields) {
             String header;
             if (isFieldNestedObject(field)) {
-                header = collectHeadersForClass(field.getType(), field, ++fieldsDepth);
+                header = collectHeadersForClass(field.getType(), ++fieldsDepth);
             } else {
-                header = parentField == null ? field.getName() : parentField.getName() +
-                        NESTED_OBJECT_HEADER_DELIMITER + field.getName();
+                header = field.getName();
             }
             headers.add(header);
         }

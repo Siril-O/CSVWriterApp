@@ -1,17 +1,18 @@
 package com.ua.sample;
 
-import java.util.List;
-
 import com.ua.sample.domain.Position;
 import com.ua.sample.exceptions.CsvWriteException;
 import com.ua.sample.exceptions.GetPositionsException;
 import com.ua.sample.services.CityPositionsService;
 import com.ua.sample.services.impl.CsvWriterServiceImpl;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.util.List;
 
 /**
  * Created by KIRIL on 15.11.2016.
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 public class ApplicationRunner {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationRunner.class);
+    private static final String DEFAULT_FILE_NAME = "cityPositions.csv";
 
     @Autowired
     private CityPositionsService cityPositionsService;
@@ -39,8 +41,10 @@ public class ApplicationRunner {
                 System.out.printf("No positions found for city: %s", cityName);
                 return;
             }
-            csvWriter.writeCsv(cityPositions, null, Position.class);
-            System.out.printf("File was filled with positions for %s successfully. For mode details see log file", cityName);
+            Path filePath = FileSystems.getDefault().getPath(DEFAULT_FILE_NAME);
+            csvWriter.writeCsv(cityPositions, Position.class, filePath);
+            System.out.printf("File %s,was filled with positions for %s successfully. For mode details see log file",
+                    filePath.toAbsolutePath(), cityName);
         } catch (GetPositionsException getPositionsException) {
             System.out.printf("Error happen while getting positions from API. Reason: %s. For mode details see log file",
                     getPositionsException.getMessage());
