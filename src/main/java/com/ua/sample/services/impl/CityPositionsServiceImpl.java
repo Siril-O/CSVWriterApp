@@ -25,7 +25,7 @@ public class CityPositionsServiceImpl implements CityPositionsService {
 
     @Override
     public List<Position> sendGetPositionsRequest(String cityName) throws GetPositionsException {
-        List<Position> positions = null;
+        List<Position> positions;
         try {
             positions = positionGateway.getPositionsByCityName(cityName);
             if (positions.isEmpty()) {

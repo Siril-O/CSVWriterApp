@@ -39,19 +39,37 @@ public class CsvWriterServiceImpl implements CsvWriterService {
 
     @Override
     public <T> void writeCsv(List<T> toSerialize, Class<T> classToSerialize, Path filePath) throws CsvWriteException {
-        Validate.notEmpty(toSerialize);
+        String header = collectHeader(classToSerialize);
+        List<List<String>> rows = collectRows(toSerialize, classToSerialize);
+
+        writeToCsv(filePath, header, rows);
+    }
+
+    protected void writeToCsv(Path filePath, String header, List<List<String>> rows) throws CsvWriteException {
         validateFilePath(filePath);
         try (FileWriter fileWriter = new FileWriter(filePath.toFile());
              CSVPrinter csvFilePrinter = new CSVPrinter(fileWriter, CSV_FORMAT)) {
-
-            String header = collectHeader(classToSerialize);
             csvFilePrinter.printRecord(header);
-            for (T value : toSerialize) {
-                csvFilePrinter.printRecord(collectRow(value, classToSerialize));
+            for (List<String> row : rows) {
+                csvFilePrinter.printRecord(row);
             }
             LOG.info("File {} was filled with data successfully.", filePath);
         } catch (Exception exception) {
             LOG.error("Error writing to file:{}. Reason: {}", filePath.toAbsolutePath(), exception);
+            throw new CsvWriteException(exception);
+        }
+    }
+
+    private <T> List<List<String>> collectRows(List<T> toSerialize, Class<T> classToSerialize) throws CsvWriteException {
+        try {
+            Validate.notEmpty(toSerialize);
+            List<List<String>> rows = Lists.newArrayList();
+            for (T value : toSerialize) {
+                rows.add(collectRow(value, classToSerialize));
+            }
+            return rows;
+        } catch (IllegalAccessException exception) {
+            LOG.error("Error happen during transforming data to write csv", exception);
             throw new CsvWriteException(exception);
         }
     }
@@ -93,9 +111,10 @@ public class CsvWriterServiceImpl implements CsvWriterService {
     }
 
     private boolean isFieldNestedObject(Field field) {
-        Class fieldType = field.getType();
-        boolean isFieldValid = !fieldType.isArray() && !fieldType.equals(Iterable.class) &&
-                !fieldType.equals(Map.class) && !fieldType.equals(Class.class) && !Modifier.isStatic(field.getModifiers());
+        Class<?> fieldType = field.getType();
+        boolean isFieldValid = !fieldType.isArray() && !Iterable.class.isAssignableFrom(fieldType) &&
+                !Map.class.isAssignableFrom(fieldType) && !fieldType.equals(Class.class)
+                && !Modifier.isStatic(field.getModifiers());
         Validate.isTrue(isFieldValid,
                 String.format("Collection and Map types could not be serialized to csv: your type %s", fieldType));
         return !ClassUtils.isPrimitiveOrWrapper(fieldType) && !fieldType.equals(String.class);
