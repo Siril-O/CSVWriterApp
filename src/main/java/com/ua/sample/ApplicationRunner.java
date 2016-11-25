@@ -41,7 +41,7 @@ public class ApplicationRunner {
                 System.out.printf("No positions found for city: %s", cityName);
                 return;
             }
-            Path filePath = FileSystems.getDefault().getPath(DEFAULT_FILE_NAME);
+            Path filePath = getFilePath();
             csvWriter.writeCsv(cityPositions, Position.class, filePath);
             System.out.printf("File %s,was filled with positions for %s successfully. For mode details see log file",
                     filePath.toAbsolutePath(), cityName);
@@ -55,5 +55,9 @@ public class ApplicationRunner {
             LOG.error("Some error happen. %s", exception);
             System.out.printf("Some error happen. Reason: %s. For mode details see log file", exception.getMessage());
         }
+    }
+
+    protected Path getFilePath() {
+        return FileSystems.getDefault().getPath(DEFAULT_FILE_NAME);
     }
 }

@@ -126,4 +126,49 @@ public class Position {
     public void setDistance(final Long distance) {
         this.distance = distance;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        final Position position = (Position) o;
+
+        if (!_id.equals(position._id)) return false;
+        if (key != null ? !key.equals(position.key) : position.key != null) return false;
+        if (name != null ? !name.equals(position.name) : position.name != null) return false;
+        if (fullName != null ? !fullName.equals(position.fullName) : position.fullName != null) return false;
+        if (iata_airport_code != null ? !iata_airport_code.equals(position.iata_airport_code) : position.iata_airport_code != null)
+            return false;
+        if (type != null ? !type.equals(position.type) : position.type != null) return false;
+        if (country != null ? !country.equals(position.country) : position.country != null) return false;
+        if (geo_position != null ? !geo_position.equals(position.geo_position) : position.geo_position != null)
+            return false;
+        if (location_id != null ? !location_id.equals(position.location_id) : position.location_id != null)
+            return false;
+        if (inEurope != null ? !inEurope.equals(position.inEurope) : position.inEurope != null) return false;
+        if (countryCode != null ? !countryCode.equals(position.countryCode) : position.countryCode != null)
+            return false;
+        if (coreCountry != null ? !coreCountry.equals(position.coreCountry) : position.coreCountry != null)
+            return false;
+        return distance != null ? distance.equals(position.distance) : position.distance == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = _id.hashCode();
+        result = 31 * result + (key != null ? key.hashCode() : 0);
+        result = 31 * result + (name != null ? name.hashCode() : 0);
+        result = 31 * result + (fullName != null ? fullName.hashCode() : 0);
+        result = 31 * result + (iata_airport_code != null ? iata_airport_code.hashCode() : 0);
+        result = 31 * result + (type != null ? type.hashCode() : 0);
+        result = 31 * result + (country != null ? country.hashCode() : 0);
+        result = 31 * result + (geo_position != null ? geo_position.hashCode() : 0);
+        result = 31 * result + (location_id != null ? location_id.hashCode() : 0);
+        result = 31 * result + (inEurope != null ? inEurope.hashCode() : 0);
+        result = 31 * result + (countryCode != null ? countryCode.hashCode() : 0);
+        result = 31 * result + (coreCountry != null ? coreCountry.hashCode() : 0);
+        result = 31 * result + (distance != null ? distance.hashCode() : 0);
+        return result;
+    }
 }
